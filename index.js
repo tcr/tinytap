@@ -49,7 +49,7 @@ function parseStream () {
         test[m[1]] = m;
 
         stream.total += 1;
-        stream.passed += m[1] ? 1 : 0;
+        stream.passed += m[0] ? 1 : 0;
       } else if (line.match(/^\s*$/)) {
         stream.push(line);
       } else if (line.length || !close) {
