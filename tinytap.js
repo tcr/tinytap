@@ -51,6 +51,14 @@ console.log('1..' + total);
 
     var proc = spawn(spawncmd[0], spawncmd.slice(1));
     var tap = proc.stdout.pipe(tinytap.parseStream());
+
+    if ('TAP_VERBOSE' in process.env) {
+      proc.stderr.pipe(process.stderr);
+    }
+    if ('TAP_VERY_VERBOSE' in process.env) {
+      proc.stdout.pipe(process.stdout);
+      proc.stderr.pipe(process.stderr);
+    }
     // proc.on('exit', function (code) {
     //   if (code) {
     //     console.error('test failed with', code);
