@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+
+var spawn = require('child_process').spawn;
+var parse = require('shell-quote').parse;
+var quote = require('shell-quote').quote;
+var tinytap = require('./');
+var glob = require('glob');
+
+var args = process.argv.slice(2);
+var list = [[null]];
+
+for (var i = 0; i < args.length; i++) {
+	if (args[i] == '-e' || args[i] == '--exec') {
+		i += 1;
+    list.push([args[i]]);
+	} else {
+		list[list.length - 1].push(args[i]);
+	}
+}
+
+if (list[0].length > 1) {
+  throw new Error('Test ' + list[0][1] + 'specified without an executable.');
+}
+list.shift();
+
+var total = 0, currentttest = 1, testsuccess = 0;
+
+for (var i = 0; i < list.length; i++) {
+  var globbed = Array.prototype.concat.apply([], list[i].slice(1).map(function (match) {
+    return glob.sync(match); 
+  }));
+  total += globbed.length;
+  list[i].splice(1, list[i].length - 1, globbed);
+}
+
+console.log('1..' + total);
+
+(function all (command) {
+  var commandProg = command[0];
+
+  (function next (file) {
+
+    var usedarg = false;
+    var spawncmd = parse(commandProg, process.env).map(function (arg) {
+      if (arg == '{}') {
+        usedarg = true;
+        return file;
+      }
+      return arg;
+    }).concat(usedarg ? [] : [file]);
+
+    var proc = spawn(spawncmd[0], spawncmd.slice(1));
+    var tap = proc.stdout.pipe(tinytap.parseStream());
+    // proc.on('exit', function (code) {
+    //   if (code) {
+    //     console.error('test failed with', code);
+    //   }
+    // })
+
+    tap.on('complete', function () {
+      testsuccess += tap.success ? 1 : 0;
+      console.log(tap.success ? 'ok' : 'not ok', currentttest++, '-', file);
+
+      if (!command[1].length) {
+        if (!list.length) {
+          finish();
+        }
+        return all(list.slice(1));
+      }
+      next(command[1].shift());
+    });
+  })(command[1].shift());
+})(list.shift());
+
+function finish () {
+  process.exit(total - testsuccess);
+}

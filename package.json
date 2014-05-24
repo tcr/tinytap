@@ -1,11 +1,18 @@
 {
   "name": "tinytap",
-  "version": "0.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Tiny tap parser and tools.",
   "main": "index.js",
+  "bin": {
+    "tinytap": "./tinytap.js"
+  },
+  "packagedDependencies": {
+    "glob": "^4.0.0",
+    "shell-quote": "^1.4.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "MIT"
 }
