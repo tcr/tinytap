@@ -3,6 +3,7 @@
 var spawn = require('child_process').spawn;
 var parse = require('shell-quote').parse;
 var quote = require('shell-quote').quote;
+var stream = require('stream');
 var tinytap = require('./');
 var glob = require('glob');
 
@@ -52,12 +53,26 @@ console.log('1..' + total);
     var proc = spawn(spawncmd[0], spawncmd.slice(1));
     var tap = proc.stdout.pipe(tinytap.parseStream());
 
-    if ('TAP_VERY_VERBOSE' in process.env) {
-      proc.stdout.pipe(process.stdout);
-      proc.stderr.pipe(process.stderr);
-    } else if ('TAP_VERBOSE' in process.env) {
-      proc.stderr.pipe(process.stderr);
+    function prefixStream () {
+      var transform = new stream.Transform()
+      var buf = '';
+      transform._transform = function (chunk, encoding, callback) {
+        buf += chunk.toString(encoding == 'buffer' ? null : encoding);
+        var pos;
+        while ((pos = buf.indexOf('\n')) > -1) {
+          this.push(' | ' + buf.slice(0, pos) + '\n');
+          buf = buf.slice(pos + 1);
+        }
+        callback();
+      }
+      return transform;
     }
+
+    if ('TAP_VERBOSE' in process.env || 'TAPV' in process.env) {
+      proc.stdout.pipe(prefixStream()).pipe(process.stderr);
+      proc.stderr.pipe(prefixStream()).pipe(process.stderr);
+    }
+    
     // proc.on('exit', function (code) {
     //   if (code) {
     //     console.error('test failed with', code);
