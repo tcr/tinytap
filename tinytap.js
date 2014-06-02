@@ -30,7 +30,7 @@ for (var i = 0; i < list.length; i++) {
   var globbed = Array.prototype.concat.apply([], list[i].slice(1).map(function (match) {
     return glob.sync(match); 
   }));
-  total += globbed.length;
+  total += globbed.length * 2;
   list[i].splice(1, list[i].length - 1, globbed);
 }
 
@@ -72,12 +72,16 @@ console.log('1..' + total);
       proc.stdout.pipe(prefixStream()).pipe(process.stderr);
       proc.stderr.pipe(prefixStream()).pipe(process.stderr);
     }
-    
-    // proc.on('exit', function (code) {
-    //   if (code) {
-    //     console.error('test failed with', code);
-    //   }
-    // })
+
+    var exited = false;
+    proc.on('exit', function (code) {
+      exited = true;
+      testsuccess += code ? 0 : 1;
+      console.log(code == 0 ? 'ok' : 'not ok', currentttest++, '- test exited with code ' + code);
+      // if (code) {
+      //   console.error('test failed with', code);
+      // }
+    })
 
     tap.on('complete', function () {
       testsuccess += tap.success ? 1 : 0;
@@ -85,7 +89,12 @@ console.log('1..' + total);
 
       if (!command[1].length) {
         if (!list.length) {
-          finish();
+          if (exited) {
+            finish();
+          } else {
+            proc.once('exit', finish);
+          }
+          return;
         }
         return all(list.slice(1));
       }
@@ -94,6 +103,6 @@ console.log('1..' + total);
   })(command[1].shift());
 })(list.shift());
 
-function finish () {
+function finish (code) {
   process.exit(total - testsuccess);
 }
