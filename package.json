@@ -1,6 +1,6 @@
 {
   "name": "tinytap",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Tiny tap parser and tools.",
   "main": "index.js",
   "bin": {
