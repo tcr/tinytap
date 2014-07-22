@@ -1,10 +1,10 @@
 {
   "name": "tinytap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tiny tap parser and tools.",
-  "main": "index.js",
+  "main": "./lib/tester/tester.js",
   "bin": {
-    "tinytap": "./tinytap.js"
+    "tinytap": "./lib/testrunner/runner.js"
   },
   "dependencies": {
     "glob": "^4.0.0",
