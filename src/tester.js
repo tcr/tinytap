@@ -1,4 +1,3 @@
-// tiny node-tap lookalike.
 module.exports = test
 
 var tests = module.exports.tests = [];
@@ -16,6 +15,10 @@ function test(name, fn) {
 
 var assert = require('assert');
 Error.captureStackTrace = function(){};
+
+test.count = function (n) {
+  console.log('1..' + Number(n));
+}
 
 var t = Object.keys(assert).map(function (k) {
   if (typeof assert[k] !== 'function') return;
@@ -77,7 +80,7 @@ t.test = function(name, fn) {
   children.push([name, fn])
 }
 
-function run() {
+function run () {
   if (children.length) {
     tests.unshift.apply(tests, children)
     children.length = 0
@@ -85,8 +88,6 @@ function run() {
 
   var next = tests.shift();
   if (!next) {
-    console.log('0..', id)
-    console.log('')
     console.log('# pass', pass, pass + fail)
     console.log('# fail', fail, pass + fail)
     process.exit(fail)

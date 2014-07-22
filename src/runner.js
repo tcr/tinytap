@@ -4,8 +4,9 @@ var spawn = require('child_process').spawn;
 var parse = require('shell-quote').parse;
 var quote = require('shell-quote').quote;
 var stream = require('stream');
-var tinytap = require('./parser.js');
 var glob = require('glob');
+
+var tinytap = require('../src/parser');
 
 var args = process.argv.slice(2);
 var list = [[null]];
