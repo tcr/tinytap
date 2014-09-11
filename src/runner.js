@@ -31,19 +31,20 @@ for (var i = 0; i < list.length; i++) {
   var globbed = Array.prototype.concat.apply([], list[i].slice(1).map(function (match) {
     return glob.sync(match); 
   }));
-  total += globbed.length * 2;
+  total += globbed.length;
   list[i].splice(1, list[i].length - 1, globbed);
 }
 
+var groups = list;
+
 console.log('1..' + total);
 
-(function all (command) {
-  var commandProg = command[0];
+(function grouper (group) {
+  var exe = group[0];
 
-  (function next (file) {
-
+  group[1].forEach(function (file) {
     var usedarg = false;
-    var spawncmd = parse(commandProg, process.env).map(function (arg) {
+    var spawncmd = parse(exe, process.env).map(function (arg) {
       if (arg == '{}') {
         usedarg = true;
         return file;
@@ -74,36 +75,35 @@ console.log('1..' + total);
       proc.stderr.pipe(prefixStream()).pipe(process.stderr);
     }
 
-    var exited = false;
-    proc.on('exit', function (code) {
+    var exited = false, completed = false, code = -1;
+    proc.on('exit', function (_code) {
+      code = _code;
       exited = true;
-      testsuccess += code ? 0 : 1;
-      console.log(code == 0 ? 'ok' : 'not ok', currentttest++, '- test exited with code ' + code);
-      // if (code) {
-      //   console.error('test failed with', code);
-      // }
+      exited && completed && procComplete();
     })
 
     tap.on('complete', function () {
-      testsuccess += tap.success ? 1 : 0;
-      console.log(tap.success ? 'ok' : 'not ok', currentttest++, '-', file);
-
-      if (!command[1].length) {
-        if (!list.length) {
-          if (exited) {
-            finish();
-          } else {
-            proc.once('exit', finish);
-          }
-          return;
-        }
-        return all(list.slice(1));
-      }
-      next(command[1].shift());
+      completed = true;
+      exited && completed && procComplete();
     });
-  })(command[1].shift());
-})(list.shift());
+
+    function procComplete () {
+      console.log(tap.success && code == 0 ? 'ok' : 'not ok', currentttest++, '-', file + (code != 0 ? ' (exit code ' + code + ')' : ''));
+      tap.success && code == 0 && testsuccess++;
+
+      if (currentttest == group[1].length) {
+        if (groups.length) {
+          next(groups.shift());  
+        } else {
+          finish();
+        }
+      }
+    }
+  });
+})(groups.shift());
 
 function finish (code) {
-  process.exit(total - testsuccess);
+  var success = total-1 - testsuccess == 0;
+  console.log(success ? 'ok' : 'not ok', currentttest++, '-', '(' + (success ? '' : 'not ') + 'all tests pass.)')
+  process.exit(total-1 - testsuccess);
 }
