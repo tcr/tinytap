@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// Executable to run other files.
+
 var spawn = require('child_process').spawn;
 var parse = require('shell-quote').parse;
 var quote = require('shell-quote').quote;
@@ -10,12 +12,18 @@ var tinytap = require('../src/parser');
 
 var args = process.argv.slice(2);
 var list = [[null]];
+var parallel = 1;
 
 for (var i = 0; i < args.length; i++) {
 	if (args[i] == '-e' || args[i] == '--exec') {
 		i += 1;
     list.push([args[i]]);
-	} else {
+  } else if (args[i].match(/^\-p(\d+)/)) {
+    parallel = parseInt(args[i].match(/^\-p(\d+)/)[1]);
+  } else if (args[i] == '-f' || args[i] == '--filter') {
+    i += 1;
+    list[list.length - 1].push('!' + args[i]);
+  } else {
 		list[list.length - 1].push(args[i]);
 	}
 }
@@ -28,21 +36,32 @@ list.shift();
 var total = 0, currentttest = 1, testsuccess = 0;
 
 for (var i = 0; i < list.length; i++) {
+  var filter = []
   var globbed = Array.prototype.concat.apply([], list[i].slice(1).map(function (match) {
-    return glob.sync(match); 
-  }));
+    if (match.charAt(0) == '!') {
+      filter = filter.concat(glob.sync(match.substr(1)));
+      return [];
+    } else {
+      return glob.sync(match); 
+    }
+  })).filter(function (file) {
+    return filter.indexOf(file) == -1;
+  });
   total += globbed.length;
   list[i].splice(1, list[i].length - 1, globbed);
 }
 
 var groups = list;
 
+process.stderr.setMaxListeners(0);
+
 console.log('1..' + total);
 
-(function grouper (group) {
+(function nextgroup (group) {
   var exe = group[0];
+  var files = group[1];
 
-  group[1].forEach(function (file) {
+  files.splice(0, parallel).forEach(function nextfile (file) {
     var usedarg = false;
     var spawncmd = parse(exe, process.env).map(function (arg) {
       if (arg == '{}') {
@@ -91,19 +110,19 @@ console.log('1..' + total);
       console.log(tap.success && code == 0 ? 'ok' : 'not ok', currentttest++, '-', file + (code != 0 ? ' (exit code ' + code + ')' : ''));
       tap.success && code == 0 && testsuccess++;
 
-      if (currentttest == group[1].length) {
-        if (groups.length) {
-          next(groups.shift());  
-        } else {
-          finish();
-        }
+      if (files.length) {
+        nextfile(files.shift());
+      } else if (groups.length) {
+        nextgroup(groups.shift());  
+      } else {
+        finish();
       }
     }
   });
 })(groups.shift());
 
 function finish (code) {
-  var success = total-1 - testsuccess == 0;
+  var success = total - testsuccess == 0;
   console.log(success ? 'ok' : 'not ok', currentttest++, '-', '(' + (success ? '' : 'not ') + 'all tests pass.)')
-  process.exit(total-1 - testsuccess);
+  process.exit(total - testsuccess);
 }

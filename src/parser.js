@@ -1,3 +1,5 @@
+// Parses TAP output.
+
 var fs = require('fs');
 var Duplex = require('stream').Duplex;
 var util = require('util');
@@ -47,7 +49,7 @@ function parseStream () {
         test[m[1]] = m;
 
         stream.total += 1;
-        stream.passed += m[0] ? 1 : 0;
+        stream.passed += m[0] ? 1 : m[3] ? 1 : 0;
       } else if (line.match(/^\s*$/)) {
         stream.push(line);
       } else if (line.length || !close) {

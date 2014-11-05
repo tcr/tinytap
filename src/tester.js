@@ -1,3 +1,5 @@
+// Test creator.
+
 module.exports = test
 
 var tests = module.exports.tests = [];
