@@ -114,7 +114,7 @@ console.log('1..' + total);
         nextfile(files.shift());
       } else if (groups.length) {
         nextgroup(groups.shift());  
-      } else {
+      } else if (currentttest > total) {
         finish();
       }
     }
