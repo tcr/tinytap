@@ -1,6 +1,6 @@
 {
   "name": "tinytap",
-  "version": "v1.2.0",
+  "version": "v1.2.1",
   "description": "Tiny TAP tester and test runner.",
   "main": "./src/tester.js",
   "bin": {
