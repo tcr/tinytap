@@ -89,7 +89,7 @@ console.log('1..' + total);
       return transform;
     }
 
-    if (parseInt(process.env.TAP_VERBOSE) == 0 || parseInt(process.env.TAPV) == 0) {
+    if (parseInt(process.env.TAP_VERBOSE) != 0 && parseInt(process.env.TAPV) != 0) {
       proc.stdout.pipe(prefixStream()).pipe(process.stderr);
       proc.stderr.pipe(prefixStream()).pipe(process.stderr);
     }
