@@ -92,8 +92,10 @@ function run () {
   if (!next) {
     console.log('# pass', pass, pass + fail)
     console.log('# fail', fail, pass + fail)
-    process.exit(fail)
-    return
+    process.on('exit', function () {
+      process.exit(fail);
+    });
+    return;
   }
 
   var name = next[0];
